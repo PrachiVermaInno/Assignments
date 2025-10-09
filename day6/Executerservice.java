@@ -1,53 +1,69 @@
 import java.io.*;
+import java.nio.file.*;
 import java.util.*;
 import java.util.concurrent.*;
-class Task4 {
+
+public class Executerservice {
+
+    // Callable task to count lines in a single file
+    static class LineCountTask implements Callable<Integer> {
+        private final Path filePath;
+
+        public LineCountTask(Path filePath) {
+            this.filePath = filePath;
+        }
+
+        @Override
+        public Integer call() throws Exception {
+            int lines = 0;
+            try (BufferedReader reader = Files.newBufferedReader(filePath)) {
+                while (reader.readLine() != null) {
+                    lines++;
+                }
+            } catch (IOException e) {
+                System.err.println("Error reading file: " + filePath + " -> " + e.getMessage());
+            }
+            return lines;
+        }
+    }
 
     public static void main(String[] args) {
-        // Step 1: Directory containing the files
-        String directoryPath = System.getProperty("user.home") + File.separator + "Documents";
-        File folder = new File(directoryPath);
+        // Directory containing text files
+        String dirPath = "C:\\Users\\Dell\\Documents\\Custom Office Templates"; // replace with your path
+        Path directory = Paths.get(dirPath);
 
-        // Step 2: Filter only text files (.txt)
-        File[] files = folder.listFiles((dir, name) -> name.endsWith(".txt"));
-        if (files == null || files.length == 0) {
-            System.out.println("No text files found in the directory.");
-            return;
-        }
+        // Create a fixed thread pool
+        ExecutorService executor = Executors.newFixedThreadPool(4); // you can adjust pool size
 
-        // Step 3: Create a fixed thread pool
-        ExecutorService executor = Executors.newFixedThreadPool(4); // 4 threads
-
-        // Step 4: Prepare Callable tasks
-        List<Callable<Integer>> tasks = new ArrayList<>();
-        for (File file : files) {
-            tasks.add(() -> {
-                int lines = 0;
-                try (BufferedReader br = new BufferedReader(new FileReader(file))) {
-                    while (br.readLine() != null) {
-                        lines++;
-                    }
-                } catch (IOException e) {
-                    System.err.println("Error reading file: " + file.getName());
-                }
-                System.out.println(file.getName() + " has " + lines + " lines.");
-                return lines;
-            });
-        }
-
-        // Step 5: Submit tasks and collect results
         try {
-            List<Future<Integer>> results = executor.invokeAll(tasks);
-            int totalLines = 0;
-            for (Future<Integer> future : results) {
-                totalLines += future.get(); // get() waits for task completion
-            }
-            System.out.println("Total lines across all files: " + totalLines);
+            // List all text files in the directory
+            List<Path> textFiles = Files.list(directory)
+                    .filter(path -> path.toString().endsWith(".txt"))
+                    .toList();
 
-        } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace();
+            List<Future<Integer>> futures = new ArrayList<>();
+
+            // Submit a LineCountTask for each file
+            for (Path file : textFiles) {
+                futures.add(executor.submit(new LineCountTask(file)));
+            }
+
+            // Collect results
+            int totalLines = 0;
+            for (Future<Integer> future : futures) {
+                try {
+                    totalLines += future.get(); // get() waits for the task to complete
+                } catch (InterruptedException | ExecutionException e) {
+                    System.err.println("Error getting result: " + e.getMessage());
+                }
+            }
+
+            System.out.println("Total number of lines across all files: " + totalLines);
+
+        } catch (IOException e) {
+            System.err.println("Error accessing directory: " + e.getMessage());
         } finally {
-            // Step 6: Shutdown the executor
+            // Shutdown the thread pool
             executor.shutdown();
         }
     }
