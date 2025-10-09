@@ -1,0 +1,94 @@
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.TimeUnit;
+
+class Deadlock_scenario{
+
+    private final Lock lock1 = new ReentrantLock();
+    private final Lock lock2 = new ReentrantLock();
+
+    public static void main(String[] args) {
+        Deadlock_scenario example = new Deadlock_scenario();
+        example.runExample();
+    }
+
+    public void runExample() {
+        Thread threadA = new Thread(this::threadAWork);
+        Thread threadB = new Thread(this::threadBWork);
+
+        threadA.start();
+        threadB.start();
+    }
+
+    // Thread A logic: lock1 → release → lock2 (with tryLock)
+    private void threadAWork() {
+        try {
+            if (lock1.tryLock(500, TimeUnit.MILLISECONDS)) {
+                try {
+                    System.out.println("Thread A locked Resource 1");
+                    Thread.sleep(200); // simulate work
+                } finally {
+                    lock1.unlock();
+                    System.out.println("Thread A unlocked Resource 1");
+                }
+            } else {
+                System.out.println("Thread A could not lock Resource 1 (timeout)");
+            }
+
+            // Now try to lock Resource 2
+            if (lock2.tryLock(500, TimeUnit.MILLISECONDS)) {
+                try {
+                    System.out.println("Thread A locked Resource 2");
+                    Thread.sleep(200);
+                    System.out.println("Thread A finished safely\n");
+                } finally {
+                    lock2.unlock();
+                    System.out.println("Thread A unlocked Resource 2");
+                }
+            } else {
+                System.out.println("Thread A could not lock Resource 2 (timeout)");
+            }
+
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Thread B logic: tries to lock both with timeout
+    private void threadBWork() {
+        while (true) {
+            try {
+                if (lock2.tryLock(300, TimeUnit.MILLISECONDS)) {
+                    try {
+                        System.out.println("Thread B locked Resource 2");
+                        Thread.sleep(100);
+
+                        if (lock1.tryLock(300, TimeUnit.MILLISECONDS)) {
+                            try {
+                                System.out.println("Thread B locked Resource 1");
+                                System.out.println("Thread B finished safely\n");
+                                break; // both locks acquired
+                            } finally {
+                                lock1.unlock();
+                                System.out.println("Thread B unlocked Resource 1");
+                            }
+                        } else {
+                            System.out.println("Thread B could not lock Resource 1, retrying...");
+                        }
+
+                    } finally {
+                        lock2.unlock();
+                        System.out.println("Thread B unlocked Resource 2");
+                    }
+                } else {
+                    System.out.println("Thread B could not lock Resource 2, retrying...");
+                }
+
+                Thread.sleep(200); // wait before retrying
+
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}
