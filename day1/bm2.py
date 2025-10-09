@@ -1,3 +1,4 @@
+# implement OOPS and SOLID Principle
 from abc import ABC, abstractmethod
 # ---- Account (Abstract) ----
 class Account(ABC): #OCP(Open close principle
@@ -140,3 +141,4 @@ class Menu:
 # ---- Run the Program ----
 if __name__ == "__main__":
     Menu().run()
+
