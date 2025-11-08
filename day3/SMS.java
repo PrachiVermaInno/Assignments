@@ -1,8 +1,6 @@
 import java.util.*;
 
 public class SMS {
-
-    // === Entity Classes ===
     static class Student {
         int id;
         String name;
@@ -47,14 +45,12 @@ public class SMS {
         }
     }
 
-    // === Data Collections ===
     List<Student> students = new ArrayList<>();
     List<Address> addresses = new ArrayList<>();
     List<ClassRoom> classes = new ArrayList<>();
 
     Scanner sc = new Scanner(System.in);
 
-    // === Core Methods ===
     void addClassRoom() {
         System.out.print("Enter Class ID: ");
         int id = sc.nextInt();
@@ -111,7 +107,6 @@ public class SMS {
         System.out.println(" Address Added Successfully!");
     }
 
-    // === Ranking ===
     void rankStudents() {
         for (int i = 0; i < students.size() - 1; i++) {
             for (int j = i + 1; j < students.size(); j++) {
@@ -128,7 +123,6 @@ public class SMS {
         }
     }
 
-    // === Search Functions ===
     List<Student> findByPincode(String pincode) {
         List<Student> result = new ArrayList<>();
         for (Address a : addresses) {
@@ -196,7 +190,6 @@ public class SMS {
         return result;
     }
 
-    // === Delete Function ===
     void deleteStudent() {
         System.out.print("Enter Student ID to delete: ");
         int sid = sc.nextInt();
@@ -218,7 +211,7 @@ public class SMS {
             }
         }
 
-        // Delete empty class
+        
         Set<Integer> classIds = new HashSet<>();
         for (Student s : students) {
             classIds.add(s.classId);
@@ -236,7 +229,6 @@ public class SMS {
         }
     }
 
-    // === Pagination ===
     List<Student> getPaginated(int start, int end, String orderBy) {
         rankStudents();
         if (orderBy.equalsIgnoreCase("name")) {
@@ -258,7 +250,6 @@ public class SMS {
         return result;
     }
 
-    // === Display Function ===
     void displayStudents(List<Student> list) {
         if (list.isEmpty()) {
             System.out.println("No students found.");
@@ -270,8 +261,6 @@ public class SMS {
                     ", Result: " + s.result + ", Rank: " + s.rank);
         }
     }
-
-    // === Menu ===
     void menu() {
         while (true) {
             System.out.println("\n==== STUDENT MANAGEMENT MENU ====");
@@ -348,7 +337,6 @@ public class SMS {
         }
     }
 
-    // === Main ===
     public static void main(String[] args) {
         SMS sms = new SMS();
         sms.menu();
